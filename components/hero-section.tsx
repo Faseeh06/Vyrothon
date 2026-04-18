@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { ScrambleTextOnHover } from "@/components/scramble-text"
-import { SplitFlapText, SplitFlapMuteToggle, SplitFlapAudioProvider } from "@/components/split-flap-text"
+import { SplitFlapText } from "@/components/split-flap-text"
 import { AnimatedNoise } from "@/components/animated-noise"
 import { BitmapChevron } from "@/components/bitmap-chevron"
 import gsap from "gsap"
@@ -35,7 +35,11 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="hero" className="relative min-h-screen flex items-center pl-6 md:pl-28 pr-6 md:pr-12">
+    <section
+      ref={sectionRef}
+      id="hero"
+      className="relative min-h-screen flex items-center justify-center px-6 md:pl-28 md:pr-12"
+    >
       <AnimatedNoise opacity={0.03} />
 
       {/* Left vertical labels */}
@@ -46,15 +50,10 @@ export function HeroSection() {
       </div>
 
       {/* Main content */}
-      <div ref={contentRef} className="flex-1 w-full">
-        <SplitFlapAudioProvider>
-          <div className="relative">
-            <SplitFlapText text="CIPHERSTACK" speed={72} />
-            <div className="mt-4">
-              <SplitFlapMuteToggle />
-            </div>
-          </div>
-        </SplitFlapAudioProvider>
+      <div ref={contentRef} className="flex w-full max-w-4xl flex-col items-center text-center">
+        <div className="relative flex flex-col items-center">
+          <SplitFlapText text="CIPHERSTACK" speed={72} />
+        </div>
 
         <h2 className="font-[var(--font-bebas)] text-muted-foreground/60 text-[clamp(1rem,3vw,2rem)] mt-4 tracking-wide">
           Node-Based Cascade Encryption Builder
@@ -65,7 +64,7 @@ export function HeroSection() {
           pipeline backward with inverses. Minimum three configurable nodes — strength comes from diversity and order.
         </p>
 
-        <div className="mt-16 flex flex-wrap items-center gap-6 md:gap-8">
+        <div className="mt-16 flex flex-wrap items-center justify-center gap-6 md:gap-10">
           <Link
             href="/builder"
             className="group inline-flex items-center gap-3 border border-foreground/20 px-6 py-3 font-mono text-xs uppercase tracking-widest text-foreground hover:border-accent hover:text-accent transition-all duration-200"
@@ -79,13 +78,6 @@ export function HeroSection() {
           >
             View ciphers
           </a>
-        </div>
-      </div>
-
-      {/* Floating info tag */}
-      <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12">
-        <div className="border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Frontend track · Hard · 1h 45m
         </div>
       </div>
     </section>

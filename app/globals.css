@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Custom editorial design tokens - monochrome with orange accent */
+/* Custom editorial design tokens - monochrome with terminal green accent */
 :root {
   --background: oklch(0.08 0 0);
   --foreground: oklch(0.95 0 0);
@@ -17,22 +17,22 @@
   --secondary-foreground: oklch(0.85 0 0);
   --muted: oklch(0.25 0 0);
   --muted-foreground: oklch(0.55 0 0);
-  --accent: oklch(0.7 0.2 45);
+  --accent: oklch(0.72 0.18 145);
   --accent-foreground: oklch(0.08 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.25 0 0);
   --input: oklch(0.2 0 0);
-  --ring: oklch(0.7 0.2 45);
+  --ring: oklch(0.72 0.18 145);
   --radius: 0rem;
   --sidebar: oklch(0.1 0 0);
   --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.7 0.2 45);
+  --sidebar-primary: oklch(0.72 0.18 145);
   --sidebar-primary-foreground: oklch(0.08 0 0);
   --sidebar-accent: oklch(0.15 0 0);
   --sidebar-accent-foreground: oklch(0.95 0 0);
   --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.7 0.2 45);
+  --sidebar-ring: oklch(0.72 0.18 145);
 }
 
 @theme inline {
@@ -133,6 +133,6 @@
 
 /* Custom selection color */
 ::selection {
-  background: oklch(0.7 0.2 45);
+  background: oklch(0.72 0.18 145);
   color: oklch(0.08 0 0);
 }
