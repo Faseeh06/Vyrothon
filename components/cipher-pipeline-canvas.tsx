@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, type DragEvent, type MouseEvent } from "react"
+import { useCallback, useEffect, useRef, type DragEvent, type MouseEvent } from "react"
 import {
   Background,
   Controls,
@@ -20,10 +20,12 @@ import {
   type NodeTypes,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
+import { ChevronDown, ChevronUp } from "lucide-react"
 import { useTheme } from "next-themes"
+import { CipherParameterFields } from "@/components/cipher-parameter-fields"
 import { cn } from "@/lib/utils"
-import { labelForCipher } from "@/lib/cipher-stack/pipeline-helpers"
-import type { CipherId, PipelineNode } from "@/lib/cipher-stack/types"
+import { labelForCipher, moveNode, patchPipelineNode } from "@/lib/cipher-stack/pipeline-helpers"
+import type { CipherId, PipelineNode, StepTrace } from "@/lib/cipher-stack/types"
 import { readCipherIdFromDataTransfer } from "@/components/cipher-drag-palette"
 
 export const FLOW_INPUT_ID = "__flow_input__"
@@ -131,14 +133,20 @@ function FlowOutputNode({
   )
 }
 
-function FlowCipherNode({
-  data,
-}: NodeProps<{
+type FlowCipherNodeData = {
   title: string
   index: number
   selected: boolean
+  pipelineNode: PipelineNode
+  trace?: StepTrace
+  onPatch: (next: PipelineNode) => void
   onRemove: () => void
-}>) {
+  onMove: (dir: -1 | 1) => void
+  canUp: boolean
+  canDown: boolean
+}
+
+function FlowCipherNode({ data }: NodeProps<FlowCipherNodeData>) {
   return (
     <>
       <Handle type="target" position={Position.Left} id="l-in" style={{ top: "30%" }} className="!h-2.5 !w-2.5 !border-border !bg-accent" />
@@ -147,28 +155,59 @@ function FlowCipherNode({
       <Handle type="source" position={Position.Right} id="r-out" style={{ top: "70%" }} className="!h-2.5 !w-2.5 !border-border !bg-accent" />
       <div
         className={cn(
-          "min-w-[160px] max-w-[220px] border px-3 py-2 font-mono text-xs shadow-sm backdrop-blur-md",
+          "border px-3 py-2 font-mono text-xs shadow-sm backdrop-blur-md transition-[min-width] duration-150",
           "border-accent/50 bg-accent/20 dark:border-accent/35 dark:bg-accent/[0.2]",
           data.selected
-            ? "border-accent bg-accent/35 ring-2 ring-accent/50 dark:border-accent/70 dark:bg-accent/30 dark:ring-accent/55"
-            : "",
+            ? "min-w-[min(90vw,280px)] max-w-[min(92vw,300px)] border-accent bg-accent/35 ring-2 ring-accent/50 dark:border-accent/70 dark:bg-accent/30 dark:ring-accent/55"
+            : "min-w-[160px] max-w-[220px]",
         )}
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1">
           <span className="text-[10px] text-muted-foreground">#{data.index + 1}</span>
-          <button
-            type="button"
-            className="leading-none text-destructive hover:text-destructive/80"
-            onClick={(e) => {
-              e.stopPropagation()
-              data.onRemove()
-            }}
-            aria-label="Remove node"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-0.5 nodrag nopan">
+            <button
+              type="button"
+              className="rounded p-0.5 text-muted-foreground hover:bg-background/30 hover:text-foreground disabled:opacity-30"
+              disabled={!data.canUp}
+              onClick={(e) => {
+                e.stopPropagation()
+                data.onMove(-1)
+              }}
+              aria-label="Move earlier in pipeline"
+            >
+              <ChevronUp className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              className="rounded p-0.5 text-muted-foreground hover:bg-background/30 hover:text-foreground disabled:opacity-30"
+              disabled={!data.canDown}
+              onClick={(e) => {
+                e.stopPropagation()
+                data.onMove(1)
+              }}
+              aria-label="Move later in pipeline"
+            >
+              <ChevronDown className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              className="px-1 leading-none text-destructive hover:text-destructive/80"
+              onClick={(e) => {
+                e.stopPropagation()
+                data.onRemove()
+              }}
+              aria-label="Remove node"
+            >
+              ×
+            </button>
+          </div>
         </div>
-        <div className="mt-1 truncate text-foreground">{data.title}</div>
+        <div className={cn("mt-1 text-foreground", data.selected ? "" : "truncate")}>{data.title}</div>
+        {data.selected && (
+          <div className="mt-3 max-h-[min(420px,55vh)] overflow-y-auto border-t border-border/40 pt-3">
+            <CipherParameterFields node={data.pipelineNode} onChange={data.onPatch} trace={data.trace} variant="canvas" />
+          </div>
+        )}
       </div>
     </>
   )
@@ -290,6 +329,8 @@ type CanvasInnerProps = {
   canCopyOutput: boolean
   /** Incremented after each successful encrypt/decrypt so the output node refreshes reliably. */
   runEpoch: number
+  /** Step traces for pipeline run (shown inside selected cipher nodes). */
+  stepTraces: Map<string, StepTrace>
 }
 
 function CanvasInner({
@@ -312,6 +353,7 @@ function CanvasInner({
   onCopyOutput,
   canCopyOutput,
   runEpoch,
+  stepTraces,
 }: CanvasInnerProps) {
   const { resolvedTheme } = useTheme()
   /** React Flow defaults to `colorMode="light"`; sync with next-themes or controls stay white with invisible icons in dark UI. */
@@ -322,10 +364,19 @@ function CanvasInner({
   const updateNodeInternals = useUpdateNodeInternals()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  /** When pipeline instance order changes (chevrons / add / remove), snap cipher nodes to the grid so edges match. */
+  const pipelineOrderKeyRef = useRef<string>("__init__")
 
   useEffect(() => {
     updateNodeInternals(FLOW_OUTPUT_ID)
   }, [finalOutput, runEpoch, updateNodeInternals])
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      pipelineNodes.forEach((p) => updateNodeInternals(p.instanceId))
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [pipelineNodes, selectedId, updateNodeInternals])
 
   const removeNode = useCallback(
     (instanceId: string) => {
@@ -340,6 +391,11 @@ function CanvasInner({
 
     setNodes((prev) => {
       const posById = new Map(prev.map((node) => [node.id, node.position]))
+      const orderKey = pipelineNodes.map((p) => p.instanceId).join("|")
+      const orderChanged =
+        pipelineOrderKeyRef.current !== "__init__" && pipelineOrderKeyRef.current !== orderKey
+      pipelineOrderKeyRef.current = orderKey
+
       const inputNode: Node = {
         id: FLOW_INPUT_ID,
         type: "ioInput",
@@ -359,12 +415,24 @@ function CanvasInner({
         position:
           pendingDrop?.id === p.instanceId
             ? { x: pendingDrop.x, y: pendingDrop.y }
-            : (posById.get(p.instanceId) ?? { x: layoutXCipher(i), y: Y }),
+            : orderChanged
+              ? { x: layoutXCipher(i), y: Y }
+              : (posById.get(p.instanceId) ?? { x: layoutXCipher(i), y: Y }),
         data: {
           title: labelForCipher(p.cipherId),
           index: i,
           selected: p.instanceId === selectedId,
+          pipelineNode: p,
+          trace: stepTraces.get(p.instanceId),
+          onPatch: (next: PipelineNode) => {
+            setPipelineNodes((prev) => patchPipelineNode(prev, p.instanceId, next))
+          },
           onRemove: () => removeNode(p.instanceId),
+          onMove: (dir: -1 | 1) => {
+            setPipelineNodes((prev) => moveNode(prev, i, dir))
+          },
+          canUp: i > 0,
+          canDown: i < pipelineNodes.length - 1,
         },
       }))
       const outputNode: Node = {
@@ -400,6 +468,7 @@ function CanvasInner({
     onCopyOutput,
     canCopyOutput,
     runEpoch,
+    stepTraces,
   ])
 
   useEffect(() => {

@@ -7,8 +7,7 @@ import type { PipelineNode, StepTrace } from "@/lib/cipher-stack/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { CipherParameterFields } from "@/components/cipher-parameter-fields"
 
 export function CipherNodeCard({
   index,
@@ -84,109 +83,7 @@ export function CipherNodeCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
-        {node.cipherId === "caesar" && (
-          <div className="space-y-2">
-            <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Shift</Label>
-            <Input
-              type="number"
-              className="rounded-none font-mono text-sm"
-              value={Number.isFinite(node.config.shift) ? node.config.shift : 0}
-              onChange={(e) =>
-                onChange({
-                  ...node,
-                  config: { shift: Number.parseInt(e.target.value, 10) || 0 },
-                })
-              }
-            />
-          </div>
-        )}
-        {node.cipherId === "xor" && (
-          <div className="space-y-2">
-            <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Key</Label>
-            <Input
-              className="rounded-none font-mono text-sm"
-              value={node.config.key}
-              onChange={(e) => onChange({ ...node, config: { key: e.target.value } })}
-              spellCheck={false}
-            />
-          </div>
-        )}
-        {node.cipherId === "vigenere" && (
-          <div className="space-y-2">
-            <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Keyword</Label>
-            <Input
-              className="rounded-none font-mono text-sm"
-              value={node.config.keyword}
-              onChange={(e) => onChange({ ...node, config: { keyword: e.target.value } })}
-              spellCheck={false}
-            />
-          </div>
-        )}
-        {node.cipherId === "railFence" && (
-          <div className="space-y-2">
-            <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Rails</Label>
-            <Input
-              type="number"
-              min={2}
-              className="rounded-none font-mono text-sm"
-              value={Number.isFinite(node.config.rails) ? node.config.rails : 2}
-              onChange={(e) =>
-                onChange({
-                  ...node,
-                  config: { rails: Math.max(2, Number.parseInt(e.target.value, 10) || 2) },
-                })
-              }
-            />
-          </div>
-        )}
-        {node.cipherId === "affine" && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">a</Label>
-              <Input
-                type="number"
-                className="rounded-none font-mono text-sm"
-                value={node.config.a}
-                onChange={(e) =>
-                  onChange({
-                    ...node,
-                    config: { ...node.config, a: Number.parseInt(e.target.value, 10) || 1 },
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">b</Label>
-              <Input
-                type="number"
-                className="rounded-none font-mono text-sm"
-                value={node.config.b}
-                onChange={(e) =>
-                  onChange({
-                    ...node,
-                    config: { ...node.config, b: Number.parseInt(e.target.value, 10) || 0 },
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-        {(node.cipherId === "atbash" || node.cipherId === "base64" || node.cipherId === "reverse") && (
-          <p className="font-mono text-[11px] text-muted-foreground">No parameters — forward and inverse are fixed.</p>
-        )}
-
-        {trace && (
-          <div className="space-y-2 border border-border/30 p-3 font-mono text-[11px] leading-relaxed">
-            <div>
-              <span className="text-muted-foreground">In · </span>
-              <span className="break-all text-foreground/90">{trace.input}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Out · </span>
-              <span className="break-all text-accent">{trace.output}</span>
-            </div>
-          </div>
-        )}
+        <CipherParameterFields node={node} onChange={onChange} trace={trace} variant="card" />
       </CardContent>
     </Card>
   )

@@ -5,16 +5,11 @@ import { useCallback, useMemo, useState } from "react"
 import { LayoutGrid, List } from "lucide-react"
 import { runDecrypt, runEncrypt } from "@/lib/cipher-stack/engine"
 import { createNode } from "@/lib/cipher-stack/registry"
-import {
-  moveNode,
-  patchPipelineNode,
-  validateNodes,
-} from "@/lib/cipher-stack/pipeline-helpers"
+import { validateNodes } from "@/lib/cipher-stack/pipeline-helpers"
 import type { CipherId, PipelineNode, StepTrace } from "@/lib/cipher-stack/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -145,6 +140,7 @@ export function CipherStackSection() {
     const id = crypto.randomUUID()
     setPendingDrop({ id, x: position.x, y: position.y })
     setNodes((prev) => [...prev, createNode(cipherId, id)])
+    setSelectedCanvasId(id)
     setLastRun(null)
     setRunError(null)
   }, [])
@@ -191,13 +187,6 @@ export function CipherStackSection() {
       setRunError("Could not copy to clipboard.")
     }
   }, [finalOutput])
-
-  const selectedCanvasNode = selectedCanvasId
-    ? nodes.find((n) => n.instanceId === selectedCanvasId)
-    : undefined
-  const selectedCanvasIndex = selectedCanvasNode
-    ? nodes.findIndex((n) => n.instanceId === selectedCanvasNode.instanceId)
-    : -1
 
   return (
     <section id="cipher-stack" className="relative scroll-mt-8 py-32 pl-6 md:pl-28 pr-6 md:pr-12">
@@ -305,9 +294,11 @@ export function CipherStackSection() {
             <div className="space-y-4">
               <h3 className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent">Flow canvas</h3>
               <p className="max-w-2xl font-mono text-[11px] text-muted-foreground leading-relaxed">
-                Drag any cipher chip onto the board to place a node. Arrows follow encrypt order (left → right); switch
-                to <span className="text-foreground/90">Decipher</span> to reverse arrow direction (inverse pass order).
-                Drag nodes to reorder.
+                Drag a cipher chip onto the board (new nodes are selected automatically).{" "}
+                <span className="text-foreground/90">Click a cipher node</span> to expand it and edit parameters on the
+                canvas—shift, keyword, Affine a/b, rails—same as list view. Use ↑ ↓ on the node to reorder the pipeline.
+                Arrows follow encrypt order (left → right); use <span className="text-foreground/90">Decipher</span> to
+                reverse flow. Drag nodes to reposition.
               </p>
               <CipherDragPalette />
               <CipherPipelineCanvas
@@ -330,10 +321,11 @@ export function CipherStackSection() {
                 onCopyOutput={copyFinal}
                 canCopyOutput={!!finalOutput}
                 runEpoch={runEpoch}
+                stepTraces={traceById}
               />
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div className="space-y-2">
                 <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Pipeline mode</span>
                 <ToggleGroup
@@ -371,33 +363,6 @@ export function CipherStackSection() {
                   Run pipeline
                 </Button>
               </div>
-            </div>
-
-            <Separator className="bg-border/60" />
-            <div className="space-y-3">
-              <h3 className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent">Node details</h3>
-              {nodes.length === 0 ? (
-                <p className="font-mono text-xs text-muted-foreground">
-                  No nodes yet. Drag at least three ciphers onto the canvas to enable a run.
-                </p>
-              ) : !selectedCanvasNode || selectedCanvasIndex < 0 ? (
-                <p className="font-mono text-xs text-muted-foreground">
-                  Select a node on the canvas to edit parameters and view step I/O.
-                </p>
-              ) : (
-                <CipherNodeCard
-                  index={selectedCanvasIndex}
-                  node={selectedCanvasNode}
-                  trace={traceById.get(selectedCanvasNode.instanceId)}
-                  onChange={(next) =>
-                    setNodes((prev) => patchPipelineNode(prev, selectedCanvasNode.instanceId, next))
-                  }
-                  onRemove={() => handleRemoveNode(selectedCanvasNode.instanceId)}
-                  onMove={(dir) => setNodes((prev) => moveNode(prev, selectedCanvasIndex, dir))}
-                  canUp={selectedCanvasIndex > 0}
-                  canDown={selectedCanvasIndex < nodes.length - 1}
-                />
-              )}
             </div>
           </>
         )}

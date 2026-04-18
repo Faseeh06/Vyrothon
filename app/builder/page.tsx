@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CipherAssistant } from "@/components/cipher-assistant"
 import { CipherStackSection } from "@/components/cipher-stack-section"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -25,6 +26,7 @@ export default function BuilderPage() {
       <div className="relative z-10">
         <CipherStackSection />
       </div>
+      <CipherAssistant />
     </main>
   )
 }
