@@ -20,25 +20,23 @@ import {
   type NodeTypes,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
+import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { labelForCipher } from "@/lib/cipher-stack/pipeline-helpers"
 import type { CipherId, PipelineNode } from "@/lib/cipher-stack/types"
 import { readCipherIdFromDataTransfer } from "@/components/cipher-drag-palette"
-
-/** Theme accent — must be a real color for SVG stroke/markers (not `hsl(var(--accent))` when --accent is oklch). */
-const FLOW_STROKE = "oklch(0.72 0.18 145)"
 
 export const FLOW_INPUT_ID = "__flow_input__"
 export const FLOW_OUTPUT_ID = "__flow_output__"
 
 const edgeStyle = {
   type: "smoothstep" as const,
-  style: { stroke: FLOW_STROKE, strokeWidth: 2 },
+  style: { stroke: "var(--accent)", strokeWidth: 2 },
   markerEnd: {
     type: MarkerType.ArrowClosed,
     width: 20,
     height: 20,
-    color: FLOW_STROKE,
+    color: "var(--accent)",
   },
 }
 
@@ -51,7 +49,7 @@ function FlowInputNode({
   placeholder: string
 }>) {
   return (
-    <div className="w-[min(100vw,280px)] border border-border/50 bg-card/95 p-3 shadow-sm">
+    <div className="w-[min(100vw,280px)] border-2 border-zinc-300 bg-white p-3 shadow-md ring-1 ring-black/[0.08] backdrop-blur-sm dark:border-border dark:bg-background/95 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.55)] dark:ring-foreground/12">
       <Handle
         type="target"
         position={Position.Right}
@@ -73,7 +71,7 @@ function FlowInputNode({
         onChange={(e) => data.onChange(e.target.value)}
         rows={4}
         spellCheck={false}
-        className="nodrag nopan nowheel w-full resize-y rounded-none border border-border/40 bg-background/80 px-2 py-1.5 font-mono text-xs text-foreground outline-none focus-visible:ring-1 focus-visible:ring-accent"
+        className="nodrag nopan nowheel w-full resize-y rounded-none border border-zinc-300 bg-zinc-50 px-2 py-1.5 font-mono text-xs text-foreground shadow-inner outline-none transition-colors focus-visible:border-accent focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-accent dark:border-input dark:bg-muted/50 dark:focus-visible:bg-background"
       />
     </div>
   )
@@ -90,7 +88,7 @@ function FlowOutputNode({
   canCopy: boolean
 }>) {
   return (
-    <div className="w-[min(100vw,280px)] border border-border/50 bg-card/95 p-3 shadow-sm">
+    <div className="w-[min(100vw,280px)] border-2 border-zinc-300 bg-white p-3 shadow-md ring-1 ring-black/[0.08] backdrop-blur-sm dark:border-border dark:bg-background/95 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.55)] dark:ring-foreground/12">
       <Handle
         type="target"
         position={Position.Left}
@@ -127,7 +125,7 @@ function FlowOutputNode({
         value={data.value ?? ""}
         placeholder={data.placeholder}
         rows={4}
-        className="w-full resize-y rounded-none border border-border/40 bg-muted/20 px-2 py-1.5 font-mono text-xs text-foreground/90 outline-none"
+        className="w-full resize-y rounded-none border border-zinc-300 bg-zinc-100 px-2 py-1.5 font-mono text-xs text-foreground shadow-inner outline-none dark:border-border/70 dark:bg-muted/35"
       />
     </div>
   )
@@ -149,8 +147,11 @@ function FlowCipherNode({
       <Handle type="source" position={Position.Right} id="r-out" style={{ top: "70%" }} className="!h-2.5 !w-2.5 !border-border !bg-accent" />
       <div
         className={cn(
-          "min-w-[160px] max-w-[220px] border bg-card/95 px-3 py-2 font-mono text-xs shadow-sm backdrop-blur-sm",
-          data.selected ? "border-accent ring-1 ring-accent/50" : "border-border/50",
+          "min-w-[160px] max-w-[220px] border px-3 py-2 font-mono text-xs shadow-sm backdrop-blur-md",
+          "border-accent/50 bg-accent/20 dark:border-accent/35 dark:bg-accent/[0.2]",
+          data.selected
+            ? "border-accent bg-accent/35 ring-2 ring-accent/50 dark:border-accent/70 dark:bg-accent/30 dark:ring-accent/55"
+            : "",
         )}
       >
         <div className="flex items-center justify-between gap-2">
@@ -312,6 +313,11 @@ function CanvasInner({
   canCopyOutput,
   runEpoch,
 }: CanvasInnerProps) {
+  const { resolvedTheme } = useTheme()
+  /** React Flow defaults to `colorMode="light"`; sync with next-themes or controls stay white with invisible icons in dark UI. */
+  const flowColorMode: "light" | "dark" =
+    resolvedTheme === "dark" ? "dark" : resolvedTheme === "light" ? "light" : "dark"
+
   const { getNodes, fitView, screenToFlowPosition } = useReactFlow()
   const updateNodeInternals = useUpdateNodeInternals()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
@@ -456,6 +462,7 @@ function CanvasInner({
 
   return (
     <ReactFlow
+      colorMode={flowColorMode}
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
@@ -470,15 +477,24 @@ function CanvasInner({
       elevateEdgesOnSelect
       minZoom={0.25}
       maxZoom={1.75}
-      className="bg-muted/10 [&_.react-flow__edge-path]:stroke-[oklch(0.72_0.18_145)]"
+      className="bg-[var(--canvas-flow-pane)] [&_.react-flow__edge-path]:stroke-[var(--accent)]"
     >
-      <Background gap={22} size={1} className="!bg-transparent" color="hsl(0 0% 22%)" />
+      <Background
+        gap={18}
+        size={2.5}
+        className="!bg-transparent"
+        color="var(--react-flow-bg-dots)"
+      />
       <Controls className="!rounded-none !border-border/50 !bg-card/90 !shadow-none" />
       <MiniMap
-        className="!rounded-none !border-border/50 !bg-card/80"
+        className="!rounded-none !border-border/50"
+        bgColor="var(--react-flow-minimap-bg)"
+        nodeColor="var(--foreground)"
+        nodeStrokeColor="var(--border)"
+        nodeStrokeWidth={2}
         zoomable
         pannable
-        maskColor="oklch(0.08 0 0 / 0.65)"
+        maskColor="var(--react-flow-minimap-mask)"
       />
     </ReactFlow>
   )
@@ -488,7 +504,7 @@ export type CipherPipelineCanvasProps = CanvasInnerProps
 
 export function CipherPipelineCanvas(props: CipherPipelineCanvasProps) {
   return (
-    <div className="h-[min(560px,70vh)] min-h-[320px] w-full border border-border/40 bg-muted/5">
+    <div className="h-[min(560px,70vh)] min-h-[320px] w-full border border-border/40 bg-[var(--canvas-flow-pane)]">
       <ReactFlowProvider>
         <CanvasInner {...props} />
       </ReactFlowProvider>

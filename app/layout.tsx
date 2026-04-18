@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { IBM_Plex_Sans, IBM_Plex_Mono, Bebas_Neue } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { SmoothScroll } from "@/components/smooth-scroll"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -47,13 +48,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark bg-background">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${ibmPlexSans.variable} ${bebasNeue.variable} ${ibmPlexMono.variable} font-sans antialiased overflow-x-hidden`}
+        className={`${ibmPlexSans.variable} ${bebasNeue.variable} ${ibmPlexMono.variable} font-sans antialiased overflow-x-hidden bg-background`}
       >
-        <div className="noise-overlay" aria-hidden="true" />
-        <SmoothScroll>{children}</SmoothScroll>
-        <Analytics />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="vyro-theme">
+          <div className="noise-overlay" aria-hidden="true" />
+          <SmoothScroll>{children}</SmoothScroll>
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   )

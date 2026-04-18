@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { CipherStackSection } from "@/components/cipher-stack-section"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function BuilderPage() {
   return (
@@ -16,7 +17,9 @@ export default function BuilderPage() {
           <span className="font-[var(--font-bebas)] text-xl tracking-tight text-foreground md:text-2xl">
             CIPHERSTACK · BUILDER
           </span>
-          <span className="w-16 md:w-24" aria-hidden />
+          <div className="flex shrink-0 items-center justify-end">
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <div className="relative z-10">

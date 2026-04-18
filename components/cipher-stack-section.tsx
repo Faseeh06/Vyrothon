@@ -97,7 +97,7 @@ function FinalOutputBlock({
 }
 
 export function CipherStackSection() {
-  const [builderView, setBuilderView] = useState<"simple" | "canvas">("simple")
+  const [builderView, setBuilderView] = useState<"simple" | "canvas">("canvas")
   const [nodes, setNodes] = useState<PipelineNode[]>([])
   const [selectedCanvasId, setSelectedCanvasId] = useState<string | null>(null)
   const [addCipher, setAddCipher] = useState<CipherId>("caesar")

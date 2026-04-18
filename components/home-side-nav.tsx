@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const sections = [
   { id: "hero", label: "Index" },
@@ -41,8 +42,11 @@ export function HomeSideNav() {
   }
 
   return (
-    <nav className="fixed left-0 top-0 z-50 h-screen w-16 md:w-20 hidden md:flex flex-col justify-center border-r border-border/30 bg-background/80 backdrop-blur-sm">
-      <div className="flex flex-col gap-6 px-4">
+    <nav className="fixed left-0 top-0 z-50 h-screen w-16 md:w-20 hidden md:flex flex-col border-r border-border/30 bg-background/80 backdrop-blur-sm">
+      <div className="flex justify-center border-b border-border/30 py-3">
+        <ThemeToggle />
+      </div>
+      <div className="flex flex-1 flex-col justify-center gap-6 px-4">
         {sections.map(({ id, label }) => (
           <button
             key={id}
