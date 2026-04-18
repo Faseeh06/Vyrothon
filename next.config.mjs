@@ -10,6 +10,7 @@ process.env.BROWSERSLIST_IGNORE_OLD_DATA = "true"
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["@xyflow/react"],
   turbopack: {
     root: projectRoot,
   },
