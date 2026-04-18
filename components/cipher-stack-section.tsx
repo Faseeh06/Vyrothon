@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { CanvasVoiceControl, type VoiceApplyPayload } from "@/components/canvas-voice-control"
 import { CipherDragPalette } from "@/components/cipher-drag-palette"
 import { CipherNodeCard } from "@/components/cipher-node-card"
 import { CipherPipelineSimple } from "@/components/cipher-pipeline-simple"
@@ -154,28 +155,33 @@ export function CipherStackSection() {
     setPendingDrop(null)
   }, [])
 
-  const handleRun = () => {
-    setRunError(null)
-    const v = validateNodes(nodes)
-    if (v) {
-      setRunError(v)
-      setLastRun(null)
-      return
-    }
-    try {
-      if (ioMode === "encrypt") {
-        const traces = runEncrypt(nodes, inputText)
-        setLastRun({ direction: "encrypt", traces })
-      } else {
-        const traces = runDecrypt(nodes, inputText)
-        setLastRun({ direction: "decrypt", traces })
+  const runPipelineNow = useCallback(
+    (pipelineNodes: PipelineNode[], text: string, mode: "encrypt" | "decrypt") => {
+      setRunError(null)
+      const v = validateNodes(pipelineNodes)
+      if (v) {
+        setRunError(v)
+        setLastRun(null)
+        return
       }
-      setRunEpoch((e) => e + 1)
-    } catch (e) {
-      setLastRun(null)
-      setRunError(e instanceof Error ? e.message : "Pipeline failed.")
-    }
-  }
+      try {
+        if (mode === "encrypt") {
+          setLastRun({ direction: "encrypt", traces: runEncrypt(pipelineNodes, text) })
+        } else {
+          setLastRun({ direction: "decrypt", traces: runDecrypt(pipelineNodes, text) })
+        }
+        setRunEpoch((e) => e + 1)
+      } catch (e) {
+        setLastRun(null)
+        setRunError(e instanceof Error ? e.message : "Pipeline failed.")
+      }
+    },
+    [],
+  )
+
+  const handleRun = useCallback(() => {
+    runPipelineNow(nodes, inputText, ioMode)
+  }, [nodes, inputText, ioMode, runPipelineNow])
 
   const copyFinal = useCallback(async () => {
     if (!finalOutput) return
@@ -187,6 +193,22 @@ export function CipherStackSection() {
       setRunError("Could not copy to clipboard.")
     }
   }, [finalOutput])
+
+  const handleVoiceApply = useCallback(
+    (p: VoiceApplyPayload) => {
+      setNodes(p.nodes)
+      setInputText(p.inputText)
+      setIoMode(p.ioMode)
+      setLastRun(null)
+      setRunError(null)
+      setSelectedCanvasId(null)
+      setPendingDrop(null)
+      if (p.run) {
+        queueMicrotask(() => runPipelineNow(p.nodes, p.inputText, p.ioMode))
+      }
+    },
+    [runPipelineNow],
+  )
 
   return (
     <section id="cipher-stack" className="relative scroll-mt-8 py-32 pl-6 md:pl-28 pr-6 md:pr-12">
@@ -300,6 +322,7 @@ export function CipherStackSection() {
                 Arrows follow encrypt order (left → right); use <span className="text-foreground/90">Decipher</span> to
                 reverse flow. Drag nodes to reposition.
               </p>
+              <CanvasVoiceControl onApply={handleVoiceApply} />
               <CipherDragPalette />
               <CipherPipelineCanvas
                 pipelineNodes={nodes}

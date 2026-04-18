@@ -22,23 +22,8 @@ export const metadata: Metadata = {
   title: "CipherStack — VYRO Hackathon | Node-Based Cascade Encryption",
   description:
     "Build a visual cascade: chain three or more configurable ciphers, run encrypt and decrypt in reverse, and inspect every intermediate string in the pipeline.",
-  generator: "Next.js",
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
 }
 
