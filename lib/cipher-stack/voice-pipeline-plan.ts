@@ -112,12 +112,9 @@ export function buildPipelineNodesFromPlan(plan: GroqPipelinePlan): PipelineNode
     }
   }
 
-  const padIds: CipherId[] = ["reverse", "atbash", "base64"]
-  let pi = 0
-  while (nodes.length < MIN_NODES) {
-    const id = padIds[pi % padIds.length]!
-    pi++
-    nodes.push(createNode(id, crypto.randomUUID()))
+  while (nodes.length < MIN_NODES && nodes.length > 0) {
+    const last = nodes[nodes.length - 1]!
+    nodes.push({ ...last, instanceId: crypto.randomUUID() })
   }
 
   return nodes

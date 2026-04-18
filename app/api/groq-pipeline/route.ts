@@ -27,7 +27,9 @@ You MUST return ONLY valid JSON (no markdown) with this exact shape:
 }
 
 Rules:
-- Include AT LEAST 3 ciphers in "ciphers" (the app requires a minimum of three). Add simple ciphers like reverse, atbash, or base64 if the user asked for fewer.
+- Include ONLY ciphers the user asked for. Never append reverse, atbash, base64, or any other cipher "to pad" or "for variety" unless the user named that cipher.
+- If they ask for the same step multiple times (e.g. "Caesar three times"), output exactly that many objects in "ciphers" with that id (e.g. three { "id": "caesar", "shift": … } entries). Do not add a fourth different cipher.
+- If they ask for fewer than three total steps without a clear repeat count, repeat their last-mentioned cipher in the array until there are three entries (same id and parameters)—do not introduce a new cipher type.
 - Affine: "a" must be coprime with 26 (use 1,3,5,7,9,11,15,17,19,21,23,25 only).
 - railFence: rails >= 2.
 - xor: non-empty key string.
